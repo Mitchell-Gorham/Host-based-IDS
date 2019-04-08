@@ -1,6 +1,6 @@
 "# Host-based-IDS" 
 # Tasks To Be Done
-## Write argument to point to Folder to be verified, if none specified, create a dummy folder with files in it
+## ~~Write argument to point to Folder to be verified, if none specified, create a dummy folder with files in it~~
 ## Create Verification File
 ## Encrypt verification file
 ## Create directory to be checked against verification file
