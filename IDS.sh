@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VER="$(pwd)/verification.txt"
+VER="$(pwd)/"
 
 #Full Path | Perms | Type | Owner | Group | Size | Last Modified Date | File Name | Checksum
 
@@ -36,11 +36,14 @@ do
 		-c)
 			#Create verifcation with the file name given as next argument.
 			echo "Create verification file"
-			if [ -f verification.txt ]
+			X=$1; shift
+			echo $1
+			if [ -f $1 ]
 			then
-				rm verification.txt
+				rm $1
 			fi
-			touch verification.txt
+			touch $1
+			VER="$VER$1"
 			echo $VER
 			dir_loop
 			;;
@@ -65,4 +68,8 @@ do
 			done
 			;;
 	esac
+	if [ "$#" -gt 1 ]
+	then
+		shift
+	fi
 done
