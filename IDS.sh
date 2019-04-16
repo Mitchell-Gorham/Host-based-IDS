@@ -2,6 +2,8 @@
 
 VER="$(pwd)/verification.txt"
 
+#Full Path | Perms | Type | Owner | Group | Size | Last Modified Date | File Name | Checksum
+
 #Loop through command line arguments checking for -c and -o
 
 dir_loop () {	# CD FIRST then call me over
@@ -10,15 +12,16 @@ dir_loop () {	# CD FIRST then call me over
 	do
 		if [ -d $i ]
 		then
-			echo $i >> $VER
+			echo -n "$(pwd)"/$i >> $VER
+			echo " $(ls -ld $i) " >> $VER
 			cd $i
 			dir_loop
 			cd ..
 		else
 		if [ -f $i ]
 		then
-			echo "$(pwd)"/$i >> $VER
-			echo -n "$(ls -l $i) " >> $VER
+			echo -n "$(pwd)"/$i  >> $VER
+			echo -n " $(ls -l $i) " >> $VER
 			CHECKSUM="$(md5sum $i | awk '{print $1}')"
 			echo $CHECKSUM >> $VER
 		fi
