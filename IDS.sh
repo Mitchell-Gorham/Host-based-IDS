@@ -11,7 +11,7 @@ do
 			touch verification.txt
 			for i in *
 			do
-				echo "$(ls -l $i)" >> verification.txt
+				echo -n "$(ls -l $i) " >> verification.txt
 				CHECKSUM="$(md5sum $i | awk '{print $1}')"
 				echo $CHECKSUM >> verification.txt
 			done
