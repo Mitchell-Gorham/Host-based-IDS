@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 #Loop through command line arguments checking for -c and -o
 for i in "$@"
 do
@@ -8,6 +7,7 @@ do
 		-c)
 			#Create verifcation with the file name given as next argument.
 			echo "Create verification file"
+			ls -l > verification.txt
 			;;
 		-o)
 			#Write results to file given as the next argument.
