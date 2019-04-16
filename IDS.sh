@@ -1,20 +1,45 @@
 #!/bin/sh
 
+VER="$(pwd)/verification.txt"
+
 #Loop through command line arguments checking for -c and -o
+
+dir_loop () {	# CD FIRST then call me over
+	#I love loops - I loop through directories
+	for i in *
+	do
+		if [ -d $i ]
+		then
+			echo $i >> $VER
+			cd $i
+			dir_loop
+			cd ..
+		else
+		if [ -f $i ]
+		then
+			echo "$(pwd)"/$i >> $VER
+			echo -n "$(ls -l $i) " >> $VER
+			CHECKSUM="$(md5sum $i | awk '{print $1}')"
+			echo $CHECKSUM >> $VER
+		fi
+		fi
+	done
+}
+
+
 for i in "$@"
 do
 	case $i in
 		-c)
 			#Create verifcation with the file name given as next argument.
 			echo "Create verification file"
-			rm verification.txt
+			if [ -f verification.txt ]
+			then
+				rm verification.txt
+			fi
 			touch verification.txt
-			for i in *
-			do
-				echo -n "$(ls -l $i) " >> verification.txt
-				CHECKSUM="$(md5sum $i | awk '{print $1}')"
-				echo $CHECKSUM >> verification.txt
-			done
+			echo $VER
+			dir_loop
 			;;
 		-o)
 			#Write results to file given as the next argument.
