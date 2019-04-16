@@ -7,7 +7,14 @@ do
 		-c)
 			#Create verifcation with the file name given as next argument.
 			echo "Create verification file"
-			ls -l > verification.txt
+			rm verification.txt
+			touch verification.txt
+			for i in *
+			do
+				echo "$(ls -l $i)" >> verification.txt
+				CHECKSUM="$(md5sum $i | awk '{print $1}')"
+				echo $CHECKSUM >> verification.txt
+			done
 			;;
 		-o)
 			#Write results to file given as the next argument.
