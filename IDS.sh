@@ -7,7 +7,7 @@ VER="$(pwd)/"
 #Loop through command line arguments checking for -c and -o
 
 dir_loop () {	# CD FIRST then call me over
-	#I love loops - I loop through directories
+	# Recursively loops through each directory and file in the specified directory
 	for i in *
 	do
 		if [ -d $i ]
@@ -29,29 +29,43 @@ dir_loop () {	# CD FIRST then call me over
 	done
 }
 
-
+##
 for i in "$@"
 do
 	case $i in
-		-c)
-			#Create verifcation with the file name given as next argument.
+		-c)	# Requires name of file after argument
+			# Create verifcation with the file name given as next argument.
 			echo "Create verification file"
-			X=$1; shift
-			echo $1
-			if [ -f $1 ]
+			shift
+			# Check if user even entered an argument for -c
+			# Check if entered argument ends in .txt, if it doesn't add it.
+			echo "File Name: $1"	# DEBUG - Display name of file
+			if [ -f $1 ]	# Checks to see if file with same name exists
 			then
-				rm $1
+				rm $1	# Removes existing file of the same name if it exists
 			fi
-			touch $1
+			touch $1	# Creates file with the name specified by the user
 			VER="$VER$1"
-			echo $VER
-			dir_loop
+			dir_loop	# Run the verification file creation script
 			;;
-		-o)
-			#Write results to file given as the next argument.
-			echo "Output results to output file"
+
+		-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
+			# Write results to file given as the next argument.
+			echo "Output results to output file" # DEBUG - Checks to see if argument fires
+			echo "IN $1" #Do stuff
+			#If output name exists
+			# Move to the output file name
+			if [ "$#" -gt 1 ]
+			then
+				shift
+				echo "Saving Data $1"
+				# hi
+			fi
+			# If user
+			# echo
 			;;
-		-dum)
+
+		-dum)	#
 			#Create dummy folders and files
 			for i in 1 2 3
 			do
@@ -67,9 +81,14 @@ do
 				fi
 			done
 			;;
+		#*)
+		#	echo "You screwed up"
+		#	;;
 	esac
-	if [ "$#" -gt 1 ]
+	if [ "$#" -gt 1 ] # if num arguments greater than 1
 	then
+#		echo "PreShift $1"
 		shift
+#		echo "PostShift $1"
 	fi
 done
