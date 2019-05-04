@@ -1,1 +1,0 @@
-/home/seed/Desktop/Host-based-IDS/dir2/dir5 drwxrwxr-x 2 seed seed 4096 May  3 17:16 dir5 
