@@ -54,14 +54,22 @@ check_loop () {
 }
 check_files_loop () {
 	#Compare check file to verification file and print differences
+	
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
-
-	cat $VER | while read veri
-	do
-		grep -n "$veri" $CPTH 
-	done
-
+	ctr=1
+	cat $VER | 
+	{
+		while read veri
+		do
+			COUNT=$(grep -c "$veri" $CPTH)
+			if [ $COUNT = 0 ]
+			then
+				deleted=`expr $deleted + 1`
+			fi
+		done
+		echo "Number of files or directories deleted:" $deleted
+	}
 }
 ##
 for i in "$@"
