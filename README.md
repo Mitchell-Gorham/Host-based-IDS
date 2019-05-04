@@ -30,7 +30,8 @@ If it is a directory then the path to that directory is written to the file alon
 In the recursive function (called when a user enters the argument to create a verification file). When the function finds a file, it calculates a MD5 checksum to be written to the verification file to later assist in checking if any changes have been made to the file.
 ### How it works:
 The checksum is calculated using the 'md5sum' command and the resulting checksum is retrieved using the 'awk' command to save only the check sum itself to a variable to then be written to the verification file. 
-## Compare file to directory
+## Compare file to directory:
+### To Do: ignore t.txt when checking for adiions, deletions and modifications.
 ### What it does:
 ### How it works:
 ## Print out specific information regarding change
