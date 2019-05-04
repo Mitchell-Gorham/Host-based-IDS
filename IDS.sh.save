@@ -57,10 +57,19 @@ check_files_loop () {
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
 
-	cat $VER | while read veri
-	do
-		grep -n "$veri" $CPTH 
-	done
+	#cat $CPTH | while read check
+	#do
+	#cat $VER | while read veri
+	#do
+			#if [ "$check" = "$veri" ]
+			#then
+			#	echo "$check = $veri"
+			#else
+	$CHECK | grep -l $VER
+	echo "This is actually running"
+			#fi
+		#done
+	#done
 
 }
 ##

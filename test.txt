@@ -1,0 +1,12 @@
+/home/seed/Desktop/Host-based-IDS/IDS.sh -rwxrwxr-x 1 seed seed 3086 May  3 19:26 IDS.sh cbce3f28c9779206ffe6a7f36e354f2d
+/home/seed/Desktop/Host-based-IDS/README.md -rw-rw-r-- 1 seed seed 6085 May  3 18:06 README.md 5e439c14d1873194dbb1f50aafd67daa
+/home/seed/Desktop/Host-based-IDS/check.txt -rw-rw-r-- 1 seed seed 1367 May  3 19:35 check.txt da76141b3575f7bc332f63b15cf1ce82
+/home/seed/Desktop/Host-based-IDS/dir1 drwxrwxr-x 2 seed seed 4096 May  3 19:07 dir1 
+/home/seed/Desktop/Host-based-IDS/dir1/test7.txt -rw-rw-r-- 1 seed seed 0 May  3 17:16 test7.txt d41d8cd98f00b204e9800998ecf8427e
+/home/seed/Desktop/Host-based-IDS/dir2 drwxrwxr-x 3 seed seed 4096 May  3 19:07 dir2 
+/home/seed/Desktop/Host-based-IDS/dir2/dir5 drwxrwxr-x 2 seed seed 4096 May  3 19:07 dir5 
+/home/seed/Desktop/Host-based-IDS/dir2/dir5/test9.txt -rw-rw-r-- 1 seed seed 0 May  3 17:16 test9.txt d41d8cd98f00b204e9800998ecf8427e
+/home/seed/Desktop/Host-based-IDS/dir3 drwxrwxr-x 2 seed seed 4096 May  3 18:53 dir3 
+/home/seed/Desktop/Host-based-IDS/file2.txt -rw-rw-r-- 1 seed seed 0 May  3 18:53 file2.txt d41d8cd98f00b204e9800998ecf8427e
+/home/seed/Desktop/Host-based-IDS/file3.txt -rw-rw-r-- 1 seed seed 0 May  3 18:53 file3.txt d41d8cd98f00b204e9800998ecf8427e
+/home/seed/Desktop/Host-based-IDS/test.txt -rw-rw-r-- 1 seed seed 1284 May  3 19:36 test.txt ce65124d3dbe4e0b162f5c0c4c41e395
