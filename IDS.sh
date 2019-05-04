@@ -50,26 +50,68 @@ check_loop () {
 		fi
 		fi
 	done
-
 }
 check_files_loop () {
 	#Compare check file to verification file and print differences
-	
+	if [ -f "t.txt" ]	# Checks to see if file with same name exists
+	then
+		rm "t.txt"	# Removes existing file of the same name if it exists
+	fi
+	touch "t.txt"
+
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
-	ctr=1
-	cat $VER | 
+	ctr=0
+	cat $VER |
 	{
-		while read veri
+		while read veri		# Detects Deletions and Modifications
 		do
 			COUNT=$(grep -c "$veri" $CPTH)
 			if [ $COUNT = 0 ]
 			then
 				deleted=`expr $deleted + 1`
+				echo "$veri -d" >> "t.txt"
 			fi
 		done
-		echo "Number of files or directories deleted:" $deleted
 	}
+
+	cat $CPTH |
+	{
+		while read check
+		do
+			COUNT=$(grep -c "$check" $VER)
+			if [ $COUNT = 0 ]
+			then
+				added=`expr $added + 1`
+				echo "$check -a" >> "t.txt"
+			fi
+		done
+	}
+	MODIFIED="$(sort t.txt | awk '{print $10}' | uniq -iD | uniq -i)"
+	cat "t.txt" |
+	{
+		while read temp
+		do
+			NAMES="$( echo $temp | awk '{print $10}')"
+			COUNT=$(grep -c "$NAMES" "t.txt")
+			if [ $COUNT = 1 ]
+			then
+				TYPE="$( echo $temp | awk '{print $12}')"
+				if [ "$TYPE" = "-a" ]
+				then
+					ADD="$ADD $NAMES"
+				else
+				if [ "$TYPE" = "-d" ]
+				then
+					DEL="$DEL $NAMES"
+				fi
+				fi
+			fi
+		done
+	 echo "Files created: " $ADD
+	 echo "Files deleted: " $DEL
+	}
+	echo "Files modified: " $MODIFIED
 }
 ##
 for i in "$@"
@@ -130,6 +172,8 @@ do
 					echo "$i exists"
 				fi
 			done
+			ln -s file1.txt slink1
+			ls -l file1.txt slink1
 			;;
 		#*)
 		#	echo "You screwed up"
