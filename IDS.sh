@@ -1,7 +1,5 @@
 #!/bin/sh
 
-VER="$(pwd)/"
-CPTH="$(pwd)/" #CHECKPATH variable that stores the path to the check file
 
 #Full Path | Perms | Type | Owner | Group | Size | Last Modified Date | File Name | Checksum
 
@@ -41,11 +39,11 @@ check_files_loop () {
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
 
-	cat $VER |
+	cat $1 |
 	{
 		while read veri		# Detects Deletions and Modifications
 		do
-			COUNT=$(grep -c "$veri" $CPTH)
+			COUNT=$(grep -c "$veri" $2)
 			if [ $COUNT = 0 ]
 			then
 				deleted=`expr $deleted + 1`
@@ -54,11 +52,11 @@ check_files_loop () {
 		done
 	}
 
-	cat $CPTH |
+	cat $2 |
 	{
 		while read check	# Detects Additions and Modifications
 		do
-			COUNT=$(grep -c "$check" $VER)
+			COUNT=$(grep -c "$check" $1)
 			if [ $COUNT = 0 ]
 			then
 				added=`expr $added + 1`
@@ -90,10 +88,10 @@ check_files_loop () {
 		done
 		#rm t.txt - #remove temp file - uncomment when needed
 
-		if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+		if [ "$#" -gt 2 ]	# Checks if user has supplied an output file to save results to
 		then
-			echo "Files created: " $ADD >> $1
-			echo "Files deleted: " $DEL >> $1
+			echo "Files created: " $ADD >> $3
+			echo "Files deleted: " $DEL >> $3
 		else
 			# Outputs results to the console
 			echo "Files created: " $ADD
@@ -101,9 +99,9 @@ check_files_loop () {
 		fi
 	}
 
-	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+	if [ "$#" -gt 2 ]	# Checks if user has supplied an output file to save results to
 	then
-		echo "Files modified: " $MODIFIED >> $1
+		echo "Files modified: " $MODIFIED >> $3
 	else
 		echo "Files modified: " $MODIFIED
 	fi
@@ -119,7 +117,6 @@ do
 			# Create verifcation with the file name given as next argument.
 			shift
 			echo "Creating verification file called $1"
-			#shift
 			# Check if user even entered an argument for -c
 			# Check if entered argument ends in .txt, if it doesn't add it.
 			if [ -f $1 ]	# Checks to see if file with same name exists
@@ -127,8 +124,9 @@ do
 				rm $1	# Removes existing file of the same name if it exists
 			fi
 			touch $1	# Creates file with the name specified by the user
-			VER="$VER$1"
+			VER="$(pwd)/$1"
 			dir_loop $VER	# Run the verification file creation script
+			shift
 			;;
 
 		-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
@@ -140,8 +138,8 @@ do
 				rm "check.txt"
 			fi
 			touch "check.txt"
-			CPTH="${CPTH}check.txt"
-			VER="$VER$1"
+			CPTH="$(pwd)/check.txt"
+			VER="$(pwd)/"$1
 			dir_loop $CPTH
 			
 			#check_files_loop
@@ -151,10 +149,11 @@ do
 			then
 				shift
 				echo "Writing results to file: $1"
-				check_files_loop $1
+				check_files_loop $VER $CPTH $1
 			else
-				check_files_loop
+				check_files_loop $VER $CPTH
 			fi
+			shift
 			;;
 
 		-dum)	# Creates dummy directories and files
@@ -178,15 +177,20 @@ do
 			#	ln -s file1.txt slink1
 			#	ls -l file1.txt slink1
 			#fi
+			shift
 			;;
-		#*)	# Potential room for argument catchall (out of scope)
-		#	echo "Catch all"
-		#	;;
+		-?*)	# Potential room for argument catchall (out of scope)
+			echo "Invalid arguement: " $1
+			echo "Arguements available are: "
+			echo "-c to create verfication file"
+			echo "-o to display output or write output to file"
+			shift
+			;;
+	#if [ "$#" -gt 1 ] # if num arguments greater than 1
+	#then
+	#	echo "PreShift $1"
+	#	shift
+	#	echo "PostShift $1"
+	#fi
 	esac
-	if [ "$#" -gt 1 ] # if num arguments greater than 1
-	then
-		#echo "PreShift $1"
-		shift
-		#echo "PostShift $1"
-	fi
 done
