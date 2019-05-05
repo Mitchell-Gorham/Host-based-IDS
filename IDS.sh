@@ -29,14 +29,28 @@ dir_loop () {
 		fi
 	done
 }
-
 check_files_loop () {
 	#Compare check file to verification file and print differences
-	if [ -f "t.txt" ]	# Checks to see if file with same name exists
-	then
-		rm "t.txt"	# Removes existing file of the same name if it exists
-	fi
-	touch "t.txt"
+	#if [ -f "t.txt" ]	# Checks to see if file with same name exists
+	#then
+	#	rm "t.txt"	# Removes existing file of the same name if it exists
+	#fi
+	tmpfile=$(mktemp)
+	#mkfifo /tmp/mypipe #1 - Create pipe
+	#if [ $? -ne 0 ]
+	#then
+	#	echo "Failed to create pipe" >&2
+	#	exit 1
+	#fi
+	#chmod 600 /tmp/mypipe  #2 - Change access mode
+	#process_file /tmp/mypipe.$$ & #3
+	#(
+	#	echo "some header info"
+	#	process_body
+	#	echo "some tailer info"
+	#) > /tmp/mypipe.$$ #4
+	#wait $! #5
+	#rm -f /tmp/mypipe.$$ #6
 
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
@@ -49,7 +63,7 @@ check_files_loop () {
 			if [ $COUNT = 0 ]
 			then
 				deleted=`expr $deleted + 1`
-				echo "$veri -d" >> "t.txt"
+				echo "$veri -d" >> $tmpfile
 			fi
 		done
 	}
@@ -62,18 +76,19 @@ check_files_loop () {
 			if [ $COUNT = 0 ]
 			then
 				added=`expr $added + 1`
-				echo "$check -a" >> "t.txt"
+				echo "$check -a" >> $tmpfile
 			fi
 		done
 	}
+	#echo "end" > "/tmp/mypipe"
 	# Save all modified file names
-	MODIFIED="$(sort t.txt | awk '{print $10}' | uniq -iD | uniq -i)"
-	cat "t.txt" |
+	MODIFIED="$(sort $tmpfile | awk '{print $10}' | uniq -iD | uniq -i)"
+	cat $tmpfile |
 	{
 		while read temp		# Detects deletions and additions
 		do
 			NAMES="$( echo $temp | awk '{print $10}')"
-			COUNT=$(grep -c "$NAMES" "t.txt")
+			COUNT=$(grep -c "$NAMES" $tmpfile)
 			if [ $COUNT = 1 ]
 			then
 				TYPE="$( echo $temp | awk '{print $12}')"
@@ -100,15 +115,15 @@ check_files_loop () {
 			echo "Files deleted: " $DEL
 		fi
 	}
-
 	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
 	then
 		echo "Files modified: " $MODIFIED >> $1
 	else
 		echo "Files modified: " $MODIFIED
 	fi
+	#rm /tmp/mypipe
+	rm $tmpfile
 }
-
 ##
 ##	MAIN
 ##
@@ -143,7 +158,7 @@ do
 			CPTH="${CPTH}check.txt"
 			VER="$VER$1"
 			dir_loop $CPTH
-			
+
 			#check_files_loop
 			#If output name exists
 			# Move to the output file name
@@ -179,9 +194,10 @@ do
 			#	ls -l file1.txt slink1
 			#fi
 			;;
-		#*)	# Potential room for argument catchall (out of scope)
-		#	echo "Catch all"
-		#	;;
+
+		-?*)	# Potential room for argument catchall (out of scope)
+			echo "$i isn't valid"
+			;;
 	esac
 	if [ "$#" -gt 1 ] # if num arguments greater than 1
 	then
