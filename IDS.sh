@@ -114,85 +114,117 @@ check_files_loop () {
 	fi
 	rm $tmpfile
 }
-##
-##	MAIN
-##
-for i in "$@"
-do
-	case $i in
-		-c)	# Requires name of file after argument
-			# Create verifcation with the file name given as next argument.
-			shift
-			echo "Creating verification file called $1"
-			#shift
-			# Check if user even entered an argument for -c
-			# Check if entered argument ends in .txt, if it doesn't add it.
-			if [ -f $1 ]	# Checks to see if file with same name exists
-			then
-				rm $1	# Removes existing file of the same name if it exists
-			fi
-			touch $1	# Creates file with the name specified by the user
-			VER="$VER$1"
-			dir_loop $VER	# Run the verification file creation script
+
+case_func () {
+  for i in "$@"
+  do
+    case $i in
+		  -c)	# Requires name of file after argument
+			    # Create verifcation with the file name given as next argument.
+			    shift
+			    echo "Creating verification file called $1"
+			    #shift
+			    # Check if user even entered an argument for -c
+			    # Check if entered argument ends in .txt, if it doesn't add it.
+			    if [ -f $1 ]	# Checks to see if file with same name exists
+			    then
+				    rm $1	# Removes existing file of the same name if it exists
+			    fi
+    			touch $1	# Creates file with the name specified by the user
+    			VER="$VER$1"
+    			dir_loop $VER	# Run the verification file creation script
+    			;;
+ 			-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
+	    		# Write results to file given as the next argument.
+		    	shift
+    			echo "Checking against verification file: $1"
+    			if [ -f "check.txt" ]	# Temp File Creation mangement
+	    		then
+	    			rm "check.txt"
+    			fi
+	     		checkfile=$(mktemp)
+		    	CPTH="$checkfile"
+    			VER="$VER$1"
+	    		dir_loop $CPTH
+      		#check_files_loop
+    			#If output name exists
+    			# Move to the output file name
+    			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results to
+    			then
+	    			shift
+	    			echo "Writing results to file: $1"
+	    			check_files_loop $1
+	    		else
+	     			check_files_loop
+	    		fi
+	    		;;
+			-dum)	# Creates dummy directories and files
+		    	echo "Creating example directories and files to work with"
+	    		for i in 1 2 3
+	    		do
+	    			if [ ! -d "dir$i" ]
+	      		then
+	    				mkdir "dir$i"
+	    			fi
+    				if [ ! -f "file$i" ]  
+    				then
+    					touch "file$i.txt"
+    				else
+    					echo "$i exists"
+    				fi
+    			done
+    			# Creates a symbolic link
+    			#if [ ! -L "slink" ]
+    			#then
+    			#	ln -s file1.txt slink1
+    			#	ls -l file1.txt slink1	
+    			#fi
+    			;;
+  		-?*)	# Potential room for argument catchall (out of scope)
+	    		echo "$i isn't valid"
+		    	;;
+    	esac
+	    if [ "$#" -gt 1 ] # if num arguments greater than 1
+	    then
+		    #echo "PreShift $1"
+		    shift
+		    #echo "PostShift $1"
+	    fi
+    done
+}
+
+#
+#MAIN
+#
+if [ "$#" = 0 ]
+then
+	echo "Please choose from the following options:"
+	echo "1 - Intrusion Detection Program"
+	echo "2 - Exit"
+	read -p "Enter 1 or 2: " ch #accepting user input to run program or exit
+	case $ch in
+		1)
+			#do stuff
+			echo "Do you want to list current files and folders?"
+			read -p "Enter y/n: " yorn
+			case $yorn in
+				y)
+					echo -n "Current list of file and folders in : "
+					echo "$PWD" | sed 's!.*/!!'
+					ls -l
+					case_func '-c' 'veri.txt' #call case function
+					;;
+				n)
+					exit 0
+					;;
+			esac
 			;;
-
-		-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
-			# Write results to file given as the next argument.
-			shift
-			echo "Checking against verification file: $1"
-			if [ -f "check.txt" ]	# Temp File Creation mangement
-			then
-				rm "check.txt"
-			fi
-			checkfile=$(mktemp)
-			CPTH="$checkfile"
-			VER="$VER$1"
-			dir_loop $CPTH
-
-			#check_files_loop
-			#If output name exists
-			# Move to the output file name
-			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results to
-			then
-				shift
-				echo "Writing results to file: $1"
-				check_files_loop $1
-			else
-				check_files_loop
-			fi
-			;;
-
-		-dum)	# Creates dummy directories and files
-			echo "Creating example directories and files to work with"
-			for i in 1 2 3
-			do
-				if [ ! -d "dir$i" ]
-				then
-					mkdir "dir$i"
-				fi
-				if [ ! -f "file$i" ]
-				then
-					touch "file$i.txt"
-				else
-					echo "$i exists"
-				fi
-			done
-			# Creates a symbolic link
-			#if [ ! -L "slink" ]
-			#then
-			#	ln -s file1.txt slink1
-			#	ls -l file1.txt slink1
-			#fi
-			;;
-
-		-?*)	# Potential room for argument catchall (out of scope)
-			echo "$i isn't valid"
+		2)
+			#exit
+			echo "Exiting program."
+			exit 0
 			;;
 	esac
-	if [ "$#" -gt 1 ] # if num arguments greater than 1
-	then
-		#echo "PreShift $1"
-		shift
-		#echo "PostShift $1"
-	fi
-done
+else
+	case_func "$@"
+fi
