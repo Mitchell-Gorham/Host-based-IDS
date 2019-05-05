@@ -37,9 +37,11 @@ The checksum is calculated using the 'md5sum' command and the resulting checksum
 ## Print out specific information regarding change
 ### What it does:
 ### How it works:
-## Write output to a file
+## ~~Write output to a file ~~
 ### What it does:
+If a user enters a name of a file to have the output written to, the results will be written to the file otherwise, the results will be printed to the console outlining the names of the files added, deleted and modified.
 ### How it works:
+Before entering the function which checks the current file system against the verification file, first there is a check to see if the user has entered the argument based on the number after '-o' has been entered. If the argument is greater than 1 then the user has specified an output file name and that will be passed to the function. Otherwise nothing will be passed to the function. Then once we've entered the check function, there is a check to see if the number of parameters is greater than 0. If so then write the outputs to the file specified. If not then print to console.
 ## 4.~~Determine if directory, don't calculate checksums for directories~~
 ### What it does:
 If a directory is found, it is not possible to calculate a checksum for it therefore this step will need to be skipped.
