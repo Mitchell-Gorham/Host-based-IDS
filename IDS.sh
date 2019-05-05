@@ -88,13 +88,27 @@ check_files_loop () {
 				fi
 			fi
 		done
+		#rm t.txt - #remove temp file - uncomment when needed
 
-		# Outputs results to the console
-		echo "Files created: " $ADD
-		echo "Files deleted: " $DEL
+		if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+		then
+			echo "Files created: " $ADD >> $1
+			echo "Files deleted: " $DEL >> $1
+		else
+			# Outputs results to the console
+			echo "Files created: " $ADD
+			echo "Files deleted: " $DEL
+		fi
 	}
-	echo "Files modified: " $MODIFIED
+
+	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+	then
+		echo "Files modified: " $MODIFIED >> $1
+	else
+		echo "Files modified: " $MODIFIED
+	fi
 }
+
 ##
 ##	MAIN
 ##
@@ -129,13 +143,17 @@ do
 			CPTH="${CPTH}check.txt"
 			VER="$VER$1"
 			dir_loop $CPTH
-			check_files_loop
+			
+			#check_files_loop
 			#If output name exists
 			# Move to the output file name
 			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results to
 			then
 				shift
 				echo "Writing results to file: $1"
+				check_files_loop $1
+			else
+				check_files_loop
 			fi
 			;;
 
