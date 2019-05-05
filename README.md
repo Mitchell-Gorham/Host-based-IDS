@@ -30,14 +30,21 @@ If it is a directory then the path to that directory is written to the file alon
 In the recursive function (called when a user enters the argument to create a verification file). When the function finds a file, it calculates a MD5 checksum to be written to the verification file to later assist in checking if any changes have been made to the file.
 ### How it works:
 The checksum is calculated using the 'md5sum' command and the resulting checksum is retrieved using the 'awk' command to save only the check sum itself to a variable to then be written to the verification file. 
-## Compare file to directory:
-### To Do: ignore t.txt when checking for adiions, deletions and modifications.
+## 8.~~Compare verification file to current directory to produce output:~~
 ### What it does:
+When the user specifies -o to check the current directory against the verification file the program reports any discrepencies (either to a specified file or printed to console).
 ### How it works:
+In order to do the checks a temporary file populated the same way the verification file was. This tempoary file is then passed to a function to check against the verification file. First a second temporary file is created to hold results of the checks. Then reading each line of the verification file, using grep we count the number of times that line appears in our temporary file. If the count returns 0 then that line was not found so it is written to the second temporary file and appended with '-d' indicating that it exists in the verification file however cannot be found in the new detail file therefore must of been deleted or modified. We then repeat the process except reading the temporary file and checking for matching lines in the verification file. We then append to the second temporary file any that don't match and append with '-a' as the line is either an object added or modified. 
+
+After this we need to separate added, modified, and deleted objects. We do this using three different variables 'MODIFIED', 'ADD', and 'DEL', these variables hold the names of the files that have been modified, added or deleted respectively. To populate 'MODIFIED' we use pipes to join multiple commands which produce the string of file names. The first command sorts our temporary file to put similar lines close together. The second command uses 'awk' to retrieve only the file name from the line (by printing the value at position 10). The second and third command 'uniq' displays only the lines that are repeated and only displays them once. The combination of these commands produces a string with file names that have been repeated in the file. If these file names have been repeated it means they must exist in both the temporary file and the verification file which indicates they have been modified but not added or deleted.
+
+Next the added and deleted variables need to be populated. To do this we read through each line of the second temporary file, similar to how the other two files were read. This time using 'awk' the program checks for the file name and makes sure it is not repeated in the file (otherwise it would already exist in our 'MODIFIED' variable). If the file name only appears once, then using 'awk' again the last value in the line is checked to see if it is an '-a' or '-d'. If it is an '-a' then the file name gets appended to the 'ADD' variable and if it is a '-d' then it gets appended to the 'DEL' variable.
+
+Once these variables are populated they then need to either be written to the console or to a output file. If the user specified an output file, it would of been passed to the program as a parameter, if not only the temporary file and verification files would of been passed. Therefore to check if an output file is specified, the number of parameters entered is checked, and if greater than two, then the output is written to the specified file, otherwise it prints to the console.
 ## Print out specific information regarding change
 ### What it does:
 ### How it works:
-## ~~Write output to a file ~~
+## 7.~~Write output to a file~~
 ### What it does:
 If a user enters a name of a file to have the output written to, the results will be written to the file otherwise, the results will be printed to the console outlining the names of the files added, deleted and modified.
 ### How it works:
