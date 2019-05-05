@@ -67,6 +67,12 @@ When the user enters the argument -c followed by the filename, the filename gets
 As we also need details for all directories and sub directories, we need to also record where these sub directories are, hence why we need to save the full path.
 ### How it works:
 In the function used to populate the verification file, when the if statement picsk up that it is a directory, then it uses the 'pwd' command to retrieve the path and it is written to the file.
+## 9.~~Change the file types written to verification file to string instead of number~~
+### What it does:
+By default when using the 'ls -l' command to retrieve details on the objects in a directory, the type is specified by a number with 1 being a file, 2 being a directory and links to files still be specified as 1. The program replaces these numeric values with string specifiying File, Directory and Symbolic Links.
+### How it works:
+In the function used to populate the verification file, looping through all the directories, 'ls -l' is used in conjunction with 'sed' to find the first instance of either 1 or 2 (depending on whether the object in that iteration is a file or directory) and replacing it with the corresponding text (i.e. 1 replaced by File and 2 replaced by Directory). If the object in iteration is a file, then an additional check is performed with the use of 'awk' to determine if the line returned by 'ls -l' starts with an l and if so it is a symbolic link therefore the 1 is replaced by the text 'Symbolic Link'.
+
 
 ## NON-FUNCTIONAL REQUIREMENT: List files and directories in the order that they were changed (compare times) accessed
 ### Catch errors and display appropriate error mesage. Allow user to try again
