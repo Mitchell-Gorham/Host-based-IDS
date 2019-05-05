@@ -13,44 +13,23 @@ dir_loop () {
 	do
 		if [ -d $i ]	# Checks if current object is directory, stores data then begins looping though it
 		then
-			echo -n "$(pwd)"/$i >> $VER
-			echo " $(ls -ld $i) " >> $VER
+			echo -n "$(pwd)"/$i >> $1
+			echo " $(ls -ld $i) " >> $1
 			cd $i
 			dir_loop
 			cd ..
 		else
 		if [ -f $i ]	# Checks if current object is a file, stores all it's data and moves on
 		then
-			echo -n "$(pwd)"/$i  >> $VER
-			echo -n " $(ls -l $i) " >> $VER
+			echo -n "$(pwd)"/$i  >> $1
+			echo -n " $(ls -l $i) " >> $1
 			CHECKSUM="$(md5sum $i | awk '{print $1}')"
-			echo $CHECKSUM >> $VER
+			echo $CHECKSUM >> $1
 		fi
 		fi
 	done
 }
-check_loop () {
-	# Recursively loops through each directory and file, checking them against the verification file
-	for i in *
-	do
-		if [ -d $i ]	# Similar
-		then
-			echo -n "$(pwd)"/$i >> $CPTH
-			echo " $(ls -ld $i) " >> $CPTH
-			cd $i
-			check_loop
-			cd ..
-		else
-		if [ -f $i ]
-		then
-			echo -n "$(pwd)"/$i  >> $CPTH
-			echo -n " $(ls -l $i) " >> $CPTH
-			CHECKSUM="$(md5sum $i | awk '{print $1}')"
-			echo $CHECKSUM >> $CPTH
-		fi
-		fi
-	done
-}
+
 check_files_loop () {
 	#Compare check file to verification file and print differences
 	if [ -f "t.txt" ]	# Checks to see if file with same name exists
@@ -100,7 +79,7 @@ check_files_loop () {
 				TYPE="$( echo $temp | awk '{print $12}')"
 				if [ "$TYPE" = "-a" ]
 				then
-					ADD="$ADD $NAMES" 
+					ADD="$ADD $NAMES"
 				else
 				if [ "$TYPE" = "-d" ]
 				then
@@ -124,8 +103,9 @@ do
 	case $i in
 		-c)	# Requires name of file after argument
 			# Create verifcation with the file name given as next argument.
-			echo "Creating verification file called $1"
 			shift
+			echo "Creating verification file called $1"
+			#shift
 			# Check if user even entered an argument for -c
 			# Check if entered argument ends in .txt, if it doesn't add it.
 			if [ -f $1 ]	# Checks to see if file with same name exists
@@ -134,7 +114,7 @@ do
 			fi
 			touch $1	# Creates file with the name specified by the user
 			VER="$VER$1"
-			dir_loop	# Run the verification file creation script
+			dir_loop $VER	# Run the verification file creation script
 			;;
 
 		-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
@@ -148,7 +128,7 @@ do
 			touch "check.txt"
 			CPTH="${CPTH}check.txt"
 			VER="$VER$1"
-			check_loop
+			dir_loop $CPTH
 			check_files_loop
 			#If output name exists
 			# Move to the output file name
