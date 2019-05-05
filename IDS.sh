@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VER="$(pwd)/"
-CPTH="$(pwd)/" #CHECKPATH variable that stores the path to the check file
+CPTH="$(pwd)" #CHECKPATH variable that stores the path to the check file
 
 #Full Path | Perms | Type | Owner | Group | Size | Last Modified Date | File Name | Checksum
 
@@ -14,7 +14,7 @@ dir_loop () {
 		if [ -d $i ]	# Checks if current object is directory, stores data then begins looping though it
 		then
 			echo -n "$(pwd)"/$i >> $1
-			echo " $(ls -ld $i) " >> $1
+			echo " $(ls -ld $i | sed 's/2/Directory/') " >> $1
 			cd $i
 			dir_loop
 			cd ..
@@ -22,21 +22,27 @@ dir_loop () {
 		if [ -f $i ]	# Checks if current object is a file, stores all it's data and moves on
 		then
 			echo -n "$(pwd)"/$i  >> $1
-			echo -n " $(ls -l $i) " >> $1
+			TEST="$(ls -l $i | awk '{print}')"
+			case $TEST in
+			l*)
+				echo -n " $(ls -l $i | sed 's/1/Symbolic Link/') " >> $1
+				;;
+			*)
+				echo -n " $(ls -l $i | sed 's/1/File/') " >> $1
+				;;
+			esac
 			CHECKSUM="$(md5sum $i | awk '{print $1}')"
 			echo $CHECKSUM >> $1
 		fi
 		fi
 	done
 }
-
+#
+#	Checks directory against verification file and generates output
+#
 check_files_loop () {
 	#Compare check file to verification file and print differences
-	if [ -f "t.txt" ]	# Checks to see if file with same name exists
-	then
-		rm "t.txt"	# Removes existing file of the same name if it exists
-	fi
-	touch "t.txt"
+	tmpfile=$(mktemp) # Create temporary file
 
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
@@ -49,7 +55,7 @@ check_files_loop () {
 			if [ $COUNT = 0 ]
 			then
 				deleted=`expr $deleted + 1`
-				echo "$veri -d" >> "t.txt"
+				echo "$veri -d" >> $tmpfile
 			fi
 		done
 	}
@@ -62,18 +68,18 @@ check_files_loop () {
 			if [ $COUNT = 0 ]
 			then
 				added=`expr $added + 1`
-				echo "$check -a" >> "t.txt"
+				echo "$check -a" >> $tmpfile
 			fi
 		done
 	}
 	# Save all modified file names
-	MODIFIED="$(sort t.txt | awk '{print $10}' | uniq -iD | uniq -i)"
-	cat "t.txt" |
+	MODIFIED="$(sort $tmpfile | awk '{print $10}' | uniq -iD | uniq -i)"
+	cat $tmpfile |
 	{
 		while read temp		# Detects deletions and additions
 		do
 			NAMES="$( echo $temp | awk '{print $10}')"
-			COUNT=$(grep -c "$NAMES" "t.txt")
+			COUNT=$(grep -c "$NAMES" $tmpfile)
 			if [ $COUNT = 1 ]
 			then
 				TYPE="$( echo $temp | awk '{print $12}')"
@@ -100,97 +106,91 @@ check_files_loop () {
 			echo "Files deleted: " $DEL
 		fi
 	}
-
 	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
 	then
 		echo "Files modified: " $MODIFIED >> $1
 	else
 		echo "Files modified: " $MODIFIED
 	fi
+	rm $tmpfile
 }
 
 case_func () {
-
-for i in "$@"
-do
-#	echo $@		#displays all parameter being passed
-#	echo $#		#number of parameters being passed
-	case $i in
-		-c)	# Requires name of file after argument
-			# Create verifcation with the file name given as next argument.
-			shift
-			echo "Creating verification file called $1"
-			#shift
-			# Check if user even entered an argument for -c
-			# Check if entered argument ends in .txt, if it doesn't add it.
-			if [ -f $1 ]	# Checks to see if file with same name exists
-			then
-				rm $1	# Removes existing file of the same name if it exists
-			fi
-			touch $1	# Creates file with the name specified by the user
-			VER="$VER$1"
-			dir_loop $VER	# Run the verification file creation script
-			;;
-			-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
-			# Write results to file given as the next argument.
-			shift
-			echo "Checking against verification file: $1"
-			if [ -f "check.txt" ]	# Temp File Creation mangement
-			then
-				rm "check.txt"
-			fi
-			touch "check.txt"
-			CPTH="${CPTH}check.txt"
-			VER="$VER$1"
-			dir_loop $CPTH
-			#check_files_loop
-			#If output name exists
-			# Move to the output file name
-			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results to
-			then
-				shift
-				echo "Writing results to file: $1"
-				check_files_loop $1
-			else
-				check_files_loop
-			fi
-			;;
+  for i in "$@"
+  do
+    case $i in
+		  -c)	# Requires name of file after argument
+			    # Create verifcation with the file name given as next argument.
+			    shift
+			    echo "Creating verification file called $1"
+			    #shift
+			    # Check if user even entered an argument for -c
+			    # Check if entered argument ends in .txt, if it doesn't add it.
+			    if [ -f $1 ]	# Checks to see if file with same name exists
+			    then
+				    rm $1	# Removes existing file of the same name if it exists
+			    fi
+    			touch $1	# Creates file with the name specified by the user
+    			VER="$VER$1"
+    			dir_loop $VER	# Run the verification file creation script
+    			;;
+ 			-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
+	    		# Write results to file given as the next argument.
+		    	shift
+    			echo "Checking against verification file: $1"
+    			if [ -f "check.txt" ]	# Temp File Creation mangement
+	    		then
+	    			rm "check.txt"
+    			fi
+	     		checkfile=$(mktemp)
+		    	CPTH="$checkfile"
+    			VER="$VER$1"
+	    		dir_loop $CPTH
+      		#check_files_loop
+    			#If output name exists
+    			# Move to the output file name
+    			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results to
+    			then
+	    			shift
+	    			echo "Writing results to file: $1"
+	    			check_files_loop $1
+	    		else
+	     			check_files_loop
+	    		fi
+	    		;;
 			-dum)	# Creates dummy directories and files
-			echo "Creating example directories and files to work with"
-			for i in 1 2 3
-			do
-				if [ ! -d "dir$i" ]
-				then
-					mkdir "dir$i"
-				fi
-				if [ ! -f "file$i" ]
-				then
-					touch "file$i.txt"
-				else
-					echo "$i exists"
-				fi
-			done
-			# Creates a symbolic link
-			#if [ ! -L "slink" ]
-			#then
-			#	ln -s file1.txt slink1
-			#	ls -l file1.txt slink1	
-			#fi
-			;;
-		#*)	# Potential room for argument catchall (out of scope)
-		#	echo "Catch all"
-		#	;;
-#		)
-#			echo "Do the menu thing here."
-#			;;
-		esac
-	if [ "$#" -gt 1 ] # if num arguments greater than 1
-	then
-		#echo "PreShift $1"
-		shift
-		#echo "PostShift $1"
-	fi
-done
+		    	echo "Creating example directories and files to work with"
+	    		for i in 1 2 3
+	    		do
+	    			if [ ! -d "dir$i" ]
+	      		then
+	    				mkdir "dir$i"
+	    			fi
+    				if [ ! -f "file$i" ]  
+    				then
+    					touch "file$i.txt"
+    				else
+    					echo "$i exists"
+    				fi
+    			done
+    			# Creates a symbolic link
+    			#if [ ! -L "slink" ]
+    			#then
+    			#	ln -s file1.txt slink1
+    			#	ls -l file1.txt slink1	
+    			#fi
+    			;;
+  		-?*)	# Potential room for argument catchall (out of scope)
+	    		echo "$i isn't valid"
+		    	;;
+    	esac
+	    if [ "$#" -gt 1 ] # if num arguments greater than 1
+	    then
+		    #echo "PreShift $1"
+		    shift
+		    #echo "PostShift $1"
+	    fi
+    done
 }
 
 #
