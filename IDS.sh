@@ -14,25 +14,31 @@ dir_loop () {
 		if [ -d $i ]	# Checks if current object is directory, stores data then begins looping though it
 		then
 			echo -n "$(pwd)"/$i >> $1
-			echo " $(ls -ld $i | sed 's/2/Directory/') " >> $1
+			echo " $(ls -ld $i | sed 's/2/directory/') " >> $1
 			cd $i
 			dir_loop
 			cd ..
 		else
 		if [ -f $i ]	# Checks if current object is a file, stores all it's data and moves on
 		then
-			echo -n "$(pwd)"/$i  >> $1
-			TEST="$(ls -l $i | awk '{print}')"
-			case $TEST in
-			l*)
-				echo -n " $(ls -l $i | sed 's/1/Symbolic Link/') " >> $1
-				;;
-			*)
-				echo -n " $(ls -l $i | sed 's/1/File/') " >> $1
-				;;
-			esac
-			CHECKSUM="$(md5sum $i | awk '{print $1}')"
-			echo $CHECKSUM >> $1
+			if [ -z "$2" ]	# If there is no second argument supplied
+			then
+				if [ "$(pwd)"/$i != $1 ] # checks if current file name isn't same name as passed file name
+				then
+					echo -n "$(pwd)"/$i  >> $1
+					echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
+					CHECKSUM="$(md5sum $i | awk '{print $1}')"
+					echo $CHECKSUM >> $1
+				fi
+			else
+			if [ "$(pwd)"/$i != "$1" ] && [ "$(pwd)"/$i != "$2" ] # If two args presented, check to make sure file name isn't equal to either of them
+			then
+				echo -n "$(pwd)"/$i  >> $1
+				echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
+				CHECKSUM="$(md5sum $i | awk '{print $1}')"
+				echo $CHECKSUM >> $1
+			fi
+			fi
 		fi
 		fi
 	done
@@ -82,7 +88,13 @@ check_files_loop () {
 			COUNT=$(grep -c "$NAMES" $tmpfile)
 			if [ $COUNT = 1 ]
 			then
-				TYPE="$( echo $temp | awk '{print $12}')"
+				DIRCHECK="$( echo $temp | awk '{print $3}')"
+				if [ "$DIRCHECK" = "directory" ]
+				then
+					TYPE="$( echo $temp | awk '{print $11}')"
+				else
+					TYPE="$( echo $temp | awk '{print $12}')"
+				fi
 				if [ "$TYPE" = "-a" ]
 				then
 					ADD="$ADD $NAMES"
@@ -94,25 +106,45 @@ check_files_loop () {
 				fi
 			fi
 		done
-		#rm t.txt - #remove temp file - uncomment when needed
-
-		if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+		if [ -f $1 ]
 		then
-			echo "Files created: " $ADD >> $1
-			echo "Files deleted: " $DEL >> $1
-		else
-			# Outputs results to the console
-			echo "Files created: " $ADD
-			echo "Files deleted: " $DEL
+			rm $1
 		fi
+		touch $1
+		output "Objects created: " $1 "$ADD"
+		output "Objects deleted: " $1 "$DEL"
 	}
-	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
-	then
-		echo "Files modified: " $MODIFIED >> $1
-	else
-		echo "Files modified: " $MODIFIED
-	fi
+	output "Objects modified: " $1 "$MODIFIED"
+
+#   Old Output Functionaility
+#		if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+#		then
+#			echo "Files created: " $ADD >> $1
+#			echo "Files deleted: " $DEL >> $1
+#		else
+#			# Outputs results to the console
+#			echo "Files created: " $ADD
+#			echo "Files deleted: " $DEL
+#		fi
+#	}
+#	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+#	then
+#		echo "Files modified: " $MODIFIED >> $1
+#	else
+#		echo "Files modified: " $MODIFIED
+#	fi
+
 	rm $tmpfile
+}
+
+output () {	# Takes (1)Header Text, (2)File output and (3)List of discrepencies detected
+	echo $1 >> $2
+	echo $1
+	for i in $3
+	do
+		echo $i >> $2
+		echo $i
+	done
 }
 
 case_func () {
@@ -145,7 +177,7 @@ case_func () {
 	     		checkfile=$(mktemp)
 		    	CPTH="$checkfile"
     			VER="$VER$1"
-	    		dir_loop $CPTH
+	    		dir_loop $CPTH $VER
       		#check_files_loop
     			#If output name exists
     			# Move to the output file name
