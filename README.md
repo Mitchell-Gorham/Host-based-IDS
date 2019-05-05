@@ -1,6 +1,9 @@
 "# Host-based-IDS" 
 # Tasks To Be Done
-## Write argument to point to Folder to be verified, if none specified, 1.~~create a dummy folder with files in it~~
+## Allow user to specify a folder to be verified. 
+### What it does:
+### How it works:
+## If none specified, 1.~~create a dummy folder with files in it~~
 ### What it does:
 For testing purposes, if the user wishes to create dummy files and directories they can enter the argument '-dum' when running the program.
 ### How it works:
@@ -20,9 +23,6 @@ In order to populate the verification file, a recursive function is used. In thi
 If it is a directory then the path to that directory is written to the file along with the details given by the 'ls -ld' command. As we also want to go through any sub directories, the change directory command is used to go into the directory found and this recursive function is called again to iterate over the everything found inside any sub directories. To get back out, the change directory command followed by '..' is run. If it is a file then the path to that file is written to the verification file along with the details associated given the same way as as if the object was a directory. 
 
 ## Encrypt verification file
-### What it does:
-### How it works:
-## Create directory to be checked against verification file
 ### What it does:
 ### How it works:
 ## 3.~~Calculate check sums on all regular files~~
@@ -62,3 +62,4 @@ As we also need details for all directories and sub directories, we need to also
 In the function used to populate the verification file, when the if statement picsk up that it is a directory, then it uses the 'pwd' command to retrieve the path and it is written to the file.
 
 ## NON-FUNCTIONAL REQUIREMENT: List files and directories in the order that they were changed (compare times) accessed
+### Catch errors and display appropriate error mesage. Allow user to try again
