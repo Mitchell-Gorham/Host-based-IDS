@@ -19,10 +19,29 @@ dir_loop () {
 		else
 		if [ -f $i ]	# Checks if current object is a file, stores all it's data and moves on
 		then
-			echo -n "$(pwd)"/$i  >> $1
-			echo -n " $(ls -l $i) " >> $1
-			CHECKSUM="$(md5sum $i | awk '{print $1}')"
-			echo $CHECKSUM >> $1
+			if [ -z "$2" ]	# If there is no second argument supplied
+			then
+				if [ "$(pwd)"/$i != $1 ] # checks if current file name isn't same name as passed file name
+				then
+					echo -n "$(pwd)"/$i  >> $1
+					echo -n " $(ls -l $i) " >> $1
+					CHECKSUM="$(md5sum $i | awk '{print $1}')"
+					echo $CHECKSUM >> $1
+				fi
+			else
+			if [ "$(pwd)"/$i != "$1" ] && [ "$(pwd)"/$i != "$2" ] # If two args presented, check to make sure file name isn't equal to either of them
+			then
+				echo "i is $(pwd)"/$i	#
+				echo "1 is "$1		#DEBUG
+				echo "2 is "$2		#
+				echo ""			#
+
+				echo -n "$(pwd)"/$i  >> $1
+				echo -n " $(ls -l $i) " >> $1
+				CHECKSUM="$(md5sum $i | awk '{print $1}')"
+				echo $CHECKSUM >> $1
+			fi
+			fi
 		fi
 		fi
 	done
@@ -124,7 +143,7 @@ do
 				rm $1	# Removes existing file of the same name if it exists
 			fi
 			touch $1	# Creates file with the name specified by the user
-			VER="$(pwd)/$1"
+			VER="$(pwd)/"$1
 			dir_loop $VER	# Run the verification file creation script
 			shift
 			;;
@@ -140,17 +159,16 @@ do
 			touch "check.txt"
 			CPTH="$(pwd)/check.txt"
 			VER="$(pwd)/"$1
-			dir_loop $CPTH
-			
-			#check_files_loop
+			dir_loop $CPTH $VER
+
 			#If output name exists
 			# Move to the output file name
-			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results to
+			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results
 			then
 				shift
 				echo "Writing results to file: $1"
 				check_files_loop $VER $CPTH $1
-			else
+			else			# Displays output to screen if no output supplied
 				check_files_loop $VER $CPTH
 			fi
 			shift
@@ -172,11 +190,14 @@ do
 				fi
 			done
 			# Creates a symbolic link
-			#if [ ! -L "slink" ]
-			#then
-			#	ln -s file1.txt slink1
-			#	ls -l file1.txt slink1
-			#fi
+			#for i in 1 2
+			#do
+			#	if [ ! -L "slink" ]
+			#	then
+			#		ln -s file$i.txt slink$i
+			#		#ls -l file$i.txt slink$i
+			#	fi
+			#done
 			shift
 			;;
 		-?*)	# Potential room for argument catchall (out of scope)
