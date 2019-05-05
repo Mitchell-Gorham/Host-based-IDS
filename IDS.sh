@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VER="$(pwd)/"
-CPTH="$(pwd)/" #CHECKPATH variable that stores the path to the check file
+CPTH="$(pwd)" #CHECKPATH variable that stores the path to the check file
 
 #Full Path | Perms | Type | Owner | Group | Size | Last Modified Date | File Name | Checksum
 
@@ -29,28 +29,12 @@ dir_loop () {
 		fi
 	done
 }
+#
+#	Checks directory against verification file and generates output
+#
 check_files_loop () {
 	#Compare check file to verification file and print differences
-	#if [ -f "t.txt" ]	# Checks to see if file with same name exists
-	#then
-	#	rm "t.txt"	# Removes existing file of the same name if it exists
-	#fi
-	tmpfile=$(mktemp)
-	#mkfifo /tmp/mypipe #1 - Create pipe
-	#if [ $? -ne 0 ]
-	#then
-	#	echo "Failed to create pipe" >&2
-	#	exit 1
-	#fi
-	#chmod 600 /tmp/mypipe  #2 - Change access mode
-	#process_file /tmp/mypipe.$$ & #3
-	#(
-	#	echo "some header info"
-	#	process_body
-	#	echo "some tailer info"
-	#) > /tmp/mypipe.$$ #4
-	#wait $! #5
-	#rm -f /tmp/mypipe.$$ #6
+	tmpfile=$(mktemp) # Create temporary file
 
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
@@ -80,7 +64,6 @@ check_files_loop () {
 			fi
 		done
 	}
-	#echo "end" > "/tmp/mypipe"
 	# Save all modified file names
 	MODIFIED="$(sort $tmpfile | awk '{print $10}' | uniq -iD | uniq -i)"
 	cat $tmpfile |
@@ -121,7 +104,6 @@ check_files_loop () {
 	else
 		echo "Files modified: " $MODIFIED
 	fi
-	#rm /tmp/mypipe
 	rm $tmpfile
 }
 ##
@@ -154,8 +136,8 @@ do
 			then
 				rm "check.txt"
 			fi
-			touch "check.txt"
-			CPTH="${CPTH}check.txt"
+			checkfile=$(mktemp)
+			CPTH="$checkfile"
 			VER="$VER$1"
 			dir_loop $CPTH
 
