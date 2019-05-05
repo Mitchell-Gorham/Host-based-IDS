@@ -14,7 +14,7 @@ dir_loop () {
 		if [ -d $i ]	# Checks if current object is directory, stores data then begins looping though it
 		then
 			echo -n "$(pwd)"/$i >> $1
-			echo " $(ls -ld $i) " >> $1
+			echo " $(ls -ld $i | sed 's/2/directory/') " >> $1
 			cd $i
 			dir_loop
 			cd ..
@@ -22,7 +22,7 @@ dir_loop () {
 		if [ -f $i ]	# Checks if current object is a file, stores all it's data and moves on
 		then
 			echo -n "$(pwd)"/$i  >> $1
-			echo -n " $(ls -l $i) " >> $1
+			echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
 			CHECKSUM="$(md5sum $i | awk '{print $1}')"
 			echo $CHECKSUM >> $1
 		fi
