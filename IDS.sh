@@ -109,11 +109,12 @@ check_files_loop () {
 	fi
 }
 
-##
-##	MAIN
-##
+case_func () {
+
 for i in "$@"
 do
+#	echo $@		#displays all parameter being passed
+#	echo $#		#number of parameters being passed
 	case $i in
 		-c)	# Requires name of file after argument
 			# Create verifcation with the file name given as next argument.
@@ -130,8 +131,7 @@ do
 			VER="$VER$1"
 			dir_loop $VER	# Run the verification file creation script
 			;;
-
-		-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
+			-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
 			# Write results to file given as the next argument.
 			shift
 			echo "Checking against verification file: $1"
@@ -143,7 +143,6 @@ do
 			CPTH="${CPTH}check.txt"
 			VER="$VER$1"
 			dir_loop $CPTH
-			
 			#check_files_loop
 			#If output name exists
 			# Move to the output file name
@@ -156,8 +155,7 @@ do
 				check_files_loop
 			fi
 			;;
-
-		-dum)	# Creates dummy directories and files
+			-dum)	# Creates dummy directories and files
 			echo "Creating example directories and files to work with"
 			for i in 1 2 3
 			do
@@ -176,13 +174,16 @@ do
 			#if [ ! -L "slink" ]
 			#then
 			#	ln -s file1.txt slink1
-			#	ls -l file1.txt slink1
+			#	ls -l file1.txt slink1	
 			#fi
 			;;
 		#*)	# Potential room for argument catchall (out of scope)
 		#	echo "Catch all"
 		#	;;
-	esac
+#		)
+#			echo "Do the menu thing here."
+#			;;
+		esac
 	if [ "$#" -gt 1 ] # if num arguments greater than 1
 	then
 		#echo "PreShift $1"
@@ -190,3 +191,40 @@ do
 		#echo "PostShift $1"
 	fi
 done
+}
+
+#
+#MAIN
+#
+if [ "$#" = 0 ]
+then
+	echo "Please choose from the following options:"
+	echo "1 - Intrusion Detection Program"
+	echo "2 - Exit"
+	read -p "Enter 1 or 2: " ch #accepting user input to run program or exit
+	case $ch in
+		1)
+			#do stuff
+			echo "Do you want to list current files and folders?"
+			read -p "Enter y/n: " yorn
+			case $yorn in
+				y)
+					echo -n "Current list of file and folders in : "
+					echo "$PWD" | sed 's!.*/!!'
+					ls -l
+					case_func '-c' 'veri.txt' #call case function
+					;;
+				n)
+					exit 0
+					;;
+			esac
+			;;
+		2)
+			#exit
+			echo "Exiting program."
+			exit 0
+			;;
+	esac
+else
+	case_func "$@"
+fi
