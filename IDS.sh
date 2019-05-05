@@ -123,16 +123,27 @@ case_func () {
 			    # Create verifcation with the file name given as next argument.
 			    shift
 			    echo "Creating verification file called $1"
-			    #shift
 			    # Check if user even entered an argument for -c
 			    # Check if entered argument ends in .txt, if it doesn't add it.
 			    if [ -f $1 ]	# Checks to see if file with same name exists
 			    then
 				    rm $1	# Removes existing file of the same name if it exists
 			    fi
+			#Create RSA pair
+			KEYFILE=$(mktemp)
+			KEY="$(openssl genrsa -out $KEYFILE 2048) >/dev/null"
+			#Retrieve Public Key
+			PUBKEYFILE=$(mktemp)
+			PUBKEY="$(openssl rsa -in $KEYFILE -out $PUBKEYFILE -outform DER -pubout)"
     			touch $1	# Creates file with the name specified by the user
     			VER="$VER$1"
     			dir_loop $VER	# Run the verification file creation script
+			echo $1
+			ENCRYPT="$(echo $1 | openssl rsautl -encrypt -out $1 -pubin -inkey $PUBKEYFILE -keyform DER)"
+			echo $ENCRYPT
+			echo "Verification file encrypted"
+			rm $KEYFILE
+			rm $PUBKEYFILE
     			;;
  			-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
 	    		# Write results to file given as the next argument.
