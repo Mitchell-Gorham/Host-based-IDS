@@ -1,5 +1,7 @@
 #!/bin/sh
 
+VER="$(pwd)/"
+CPTH="$(pwd)"
 
 #Full Path | Perms | Type | Owner | Group | Size | Last Modified Date | File Name | Checksum
 
@@ -12,7 +14,7 @@ dir_loop () {
 		if [ -d $i ]	# Checks if current object is directory, stores data then begins looping though it
 		then
 			echo -n "$(pwd)"/$i >> $1
-			echo " $(ls -ld $i) " >> $1
+			echo " $(ls -ld $i | sed 's/2/directory/') " >> $1
 			cd $i
 			dir_loop
 			cd ..
@@ -24,20 +26,15 @@ dir_loop () {
 				if [ "$(pwd)"/$i != $1 ] # checks if current file name isn't same name as passed file name
 				then
 					echo -n "$(pwd)"/$i  >> $1
-					echo -n " $(ls -l $i) " >> $1
+					echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
 					CHECKSUM="$(md5sum $i | awk '{print $1}')"
 					echo $CHECKSUM >> $1
 				fi
 			else
 			if [ "$(pwd)"/$i != "$1" ] && [ "$(pwd)"/$i != "$2" ] # If two args presented, check to make sure file name isn't equal to either of them
 			then
-				echo "i is $(pwd)"/$i	#
-				echo "1 is "$1		#DEBUG
-				echo "2 is "$2		#
-				echo ""			#
-
 				echo -n "$(pwd)"/$i  >> $1
-				echo -n " $(ls -l $i) " >> $1
+				echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
 				CHECKSUM="$(md5sum $i | awk '{print $1}')"
 				echo $CHECKSUM >> $1
 			fi
@@ -49,51 +46,53 @@ dir_loop () {
 
 check_files_loop () {
 	#Compare check file to verification file and print differences
-	if [ -f "t.txt" ]	# Checks to see if file with same name exists
-	then
-		rm "t.txt"	# Removes existing file of the same name if it exists
-	fi
-	touch "t.txt"
+	tmpfile=$(mktemp) # Create temporary file
 
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
 
-	cat $1 |
+	cat $VER |
 	{
 		while read veri		# Detects Deletions and Modifications
 		do
-			COUNT=$(grep -c "$veri" $2)
+			COUNT=$(grep -c "$veri" $CPTH)
 			if [ $COUNT = 0 ]
 			then
 				deleted=`expr $deleted + 1`
-				echo "$veri -d" >> "t.txt"
+				echo "$veri -d" >> $tmpfile
 			fi
 		done
 	}
 
-	cat $2 |
+	cat $CPTH |
 	{
 		while read check	# Detects Additions and Modifications
 		do
-			COUNT=$(grep -c "$check" $1)
+			COUNT=$(grep -c "$check" $VER)
 			if [ $COUNT = 0 ]
 			then
 				added=`expr $added + 1`
-				echo "$check -a" >> "t.txt"
+				echo "$check -a" >> $tmpfile
 			fi
 		done
 	}
 	# Save all modified file names
-	MODIFIED="$(sort t.txt | awk '{print $10}' | uniq -iD | uniq -i)"
-	cat "t.txt" |
+	MODIFIED="$(sort $tmpfile | awk '{print $10}' | uniq -iD | uniq -i)"
+	cat $tmpfile |
 	{
 		while read temp		# Detects deletions and additions
 		do
 			NAMES="$( echo $temp | awk '{print $10}')"
-			COUNT=$(grep -c "$NAMES" "t.txt")
+			COUNT=$(grep -c "$NAMES" $tmpfile)
 			if [ $COUNT = 1 ]
 			then
-				TYPE="$( echo $temp | awk '{print $12}')"
+				DIRCHECK="$( echo $temp | awk '{print $3}')"
+				if [ "$DIRCHECK" = "directory" ]
+				then
+					TYPE="$( echo $temp | awk '{print $11}')"
+				else
+					TYPE="$( echo $temp | awk '{print $12}')"
+				fi
 				if [ "$TYPE" = "-a" ]
 				then
 					ADD="$ADD $NAMES"
@@ -105,25 +104,44 @@ check_files_loop () {
 				fi
 			fi
 		done
-		#rm t.txt - #remove temp file - uncomment when needed
-
-		if [ "$#" -gt 2 ]	# Checks if user has supplied an output file to save results to
+		if [ -f $1 ]
 		then
-			echo "Files created: " $ADD >> $3
-			echo "Files deleted: " $DEL >> $3
-		else
-			# Outputs results to the console
-			echo "Files created: " $ADD
-			echo "Files deleted: " $DEL
+			rm $1
 		fi
+		touch $1
+		output "Objects created: " $1 "$ADD"
+		output "Objects deleted: " $1 "$DEL"
 	}
+	output "Objects modified: " $1 "$MODIFIED"
 
-	if [ "$#" -gt 2 ]	# Checks if user has supplied an output file to save results to
-	then
-		echo "Files modified: " $MODIFIED >> $3
-	else
-		echo "Files modified: " $MODIFIED
-	fi
+#		if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+#		then
+#			echo "Files created: " $ADD >> $1
+#			echo "Files deleted: " $DEL >> $1
+#		else
+#			# Outputs results to the console
+#			echo "Files created: " $ADD
+#			echo "Files deleted: " $DEL
+#		fi
+#	}
+#	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+#	then
+#		echo "Files modified: " $MODIFIED >> $1
+#	else
+#		echo "Files modified: " $MODIFIED
+#	fi
+	rm $tmpfile
+}
+
+
+output () {	# Takes (1)Header Text, (2)File output and (3)List of discrepencies detected
+	echo $1 >> $2
+	echo $1
+	for i in $3
+	do
+		echo $i >> $2
+		echo $i
+	done
 }
 
 ##
@@ -143,9 +161,9 @@ do
 				rm $1	# Removes existing file of the same name if it exists
 			fi
 			touch $1	# Creates file with the name specified by the user
-			VER="$(pwd)/"$1
+			VER=$VER$1
 			dir_loop $VER	# Run the verification file creation script
-			shift
+			#shift
 			;;
 
 		-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
@@ -156,22 +174,22 @@ do
 			then
 				rm "check.txt"
 			fi
-			touch "check.txt"
-			CPTH="$(pwd)/check.txt"
-			VER="$(pwd)/"$1
+			checkfile=$(mktemp)
+			CPTH="$checkfile"
+			VER="$VER$1"
 			dir_loop $CPTH $VER
 
+			#check_files_loop
 			#If output name exists
 			# Move to the output file name
-			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results
+			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results to
 			then
 				shift
 				echo "Writing results to file: $1"
-				check_files_loop $VER $CPTH $1
-			else			# Displays output to screen if no output supplied
-				check_files_loop $VER $CPTH
+				check_files_loop $1
+			else
+				check_files_loop
 			fi
-			shift
 			;;
 
 		-dum)	# Creates dummy directories and files
