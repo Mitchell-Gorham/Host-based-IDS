@@ -24,7 +24,15 @@ dir_loop () {
 				if [ "$(pwd)/$i" != $1 ] # checks if current file name isn't same name as passed file name
 				then
 					echo -n "$(pwd)/$i"  >> $1
-					echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
+					TEST="$(ls -l $i | awk '{print}')"
+					case $TEST in
+						l*)
+							echo -n " $(ls -l $i | sed 's/1/symlink/') " >> $1
+							;;
+						*)
+							echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
+							;;
+					esac
 					CHECKSUM="$(md5sum $i | awk '{print $1}')"
 					echo $CHECKSUM >> $1
 				fi
@@ -32,7 +40,14 @@ dir_loop () {
 			if [ "$(pwd)/$i" != "$1" ] && [ "$(pwd)/$i" != "$2" ] # If two args presented, check to make sure file name isn't equal to either of them
 			then
 				echo -n "$(pwd)/$i"  >> $1
-				echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
+				case $TEST in
+					l*)
+						echo -n " $(ls -l $i | sed 's/1/symlink/') " >> $1
+						;;
+					*)
+						echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
+						;;
+				esac
 				CHECKSUM="$(md5sum $i | awk '{print $1}')"
 				echo $CHECKSUM >> $1
 			fi
@@ -77,6 +92,7 @@ check_files_loop () {
 		done
 	}
 	# Save all modified file names
+	#cat $tmpfile
 	MODIFIED="$(sort $tmpfile | awk '{print $10}' | uniq -iD | uniq -i)"
 	cat $tmpfile |
 	{
@@ -90,9 +106,14 @@ check_files_loop () {
 				if [ "$DIRCHECK" = "directory" ]
 				then
 					TYPE="$( echo $temp | awk '{print $11}')"
-				else
+				elif [ "$DIRCHECK" = "file" ]
+				then
 					TYPE="$( echo $temp | awk '{print $12}')"
+				else
+					echo $temp
+					TYPE="$( echo $temp | awk '{print $14}')" 
 				fi
+
 				if [ "$TYPE" = "-a" ]
 				then
 					ADD="$ADD $NAMES"
@@ -238,7 +259,7 @@ case_func () {
 				#	ln -s file1.txt slink1
 				#	ls -l file1.txt slink1	
 				#fi
-				return
+				return 1
 				;;
   		-?*)	# Potential room for argument catchall (out of scope)
 				echo "$i isn't a valid argument"
