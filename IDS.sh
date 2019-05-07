@@ -292,11 +292,11 @@ then
 				echo "Do you want files and folders to be created?"
 				read -p "Enter y for yes or any key for no: " yorn
 				if [ "$yorn" = "y" ]
-				then
+				then 
 					case_func '-dum' #calls case_func and creates dummy files and folders
 				fi
 				echo "Do you want to list all current files and folders?"
-				read -p "Enter y for yes or nay key for no: " yorn
+				read -p "Enter y for yes or any key for no: " yorn
 				if [ "$yorn" = "y" ]
 				then
 					echo -n "Current list of file and folders in : "
@@ -304,12 +304,33 @@ then
 					ls -l
 				fi
 				read -p "Enter a name for the verification file: " fname
-				case_func '-c' "$fname" #calls case_func to create a verification file and gives it a file name
+				ext=`echo $fname | grep ".txt"`
+				if [ -n "$ext" ]
+				then
+					if  case_func '-c' "$fname"  #calls case_func to create a verification file and gives it a file name
+					then
+						echo "The program terminated due to bad input."
+						exit 0
+					fi
+				else
+					fname="$fname.txt"
+					echo "The file name you entered does not have a valid text file extension."
+					echo "This has been fixed for you: $fname"
+					if  case_func '-c' "$fname" 
+					then
+						echo "The program terminated due to bad input."
+						exit 0
+					fi
+				fi
 				echo "Please make changes to your file system manually."
 				read -p "Press any key and enter when you're done: " yorn
 				if [ "$#" -ge 0 ]
 				then
-					case_func '-o' "$fname" 'output.txt'
+					if  case_func '-o' "$fname" 'output.txt'
+					then
+						echo "Program terminated due to bad input."
+						exit 0
+					fi
 				fi
 				;;
 			2)
