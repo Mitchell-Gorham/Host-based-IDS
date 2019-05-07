@@ -232,57 +232,50 @@ case_func () {
 
 if [ "$#" = 0 ]
 then
-	echo "Please choose from the following options:"
-	echo "1 - Intrusion Detection Program"
-	echo "2 - Exit"
-	read -p "Enter 1 or 2: " ch #accepting user input to run program or exit
-	case $ch in
-		1)
-			echo "Do you want files and folders to be created?"
-			read -p "Enter y or n: " yorn
-			if [ "$yorn" = "y" ]
-			then
-				case_func '-dum' #calls case_func and creates dummy files and folders
-			fi
-			echo "Do you want to list all current files and folders?"
-			read -p "Enter y or n: " yorn
-			if [ "$yorn" = "y" ]
-			then
-				echo -n "Current list of file and folders in : "
-				echo "$PWD" | sed 's!.*/!!'
-				ls -l
-			fi
-			echo "Do you want a verification file to be created?"
-			read -p "Enter y and verification file name or n: " yorn fname
-			if [ "$yorn" = "y" ]
-			then
+	while :
+	do
+		echo "Please choose from the following options:"
+		echo "1 - Intrusion Detection Program"
+		echo "2 - Exit"
+		read -p "Enter 1 or 2: " ch #accepting user input to run program or exit
+		case $ch in
+			1)
+				echo "Do you want files and folders to be created?"
+				read -p "Enter y for yes or any key for no: " yorn
+				if [ "$yorn" = "y" ]
+				then
+					case_func '-dum' #calls case_func and creates dummy files and folders
+				fi
+				echo "Do you want to list all current files and folders?"
+				read -p "Enter y for yes or nay key for no: " yorn
+				if [ "$yorn" = "y" ]
+				then
+					echo -n "Current list of file and folders in : "
+					echo "$PWD" | sed 's!.*/!!'
+					ls -l
+				fi
+				read -p "Enter a name for the verification file: " fname
 				case_func '-c' "$fname" #calls case_func to create a verification file and gives it a file name
-			fi
-			echo "Do you want this demo IDP to make changes to the files and folders?"
-			read -p "Enter y or n: " yorn
-			if [ "$yorn" = "y" ]
-			then
-				#create automated program that makes changes to files and folders in current directory (not veri/IDS)
-				echo "I got this far"
-			else
-			if [ "$yorn" = "n" ]
-			then
-				read -p "Please make changes manually. Enter y when you're done: " op
-				if [ "$op" = "y" ]
+				echo "Please make changes to your file system manually."
+				read -p "Press any key and enter when you're done: " yorn
+				if [ "$#" -ge 0 ]
 				then
 					case_func '-o' "$fname" 'output.txt'
 				fi
-			fi
-			fi
-			;;
-		2)
-			#exit
-			echo "Exiting program."
-			exit 0
-			;;
-	esac
+				;;
+			2)
+				#exit
+				echo "Exiting program."
+				exit 0
+				;;
+		esac
+	done
 else
 	case_func "$@"
+	while [ "$#" -ge 2 ]
+	do
+		shift
+		shift
+		case_func "$@"
+	done
 fi
-
-
