@@ -1,7 +1,5 @@
 #!/bin/sh
 
-VER="$(pwd)/"
-CPTH="$(pwd)" #CHECKPATH variable that stores the path to the check file
 
 #Full Path | Perms | Type | Owner | Group | Size | Last Modified Date | File Name | Checksum
 
@@ -14,25 +12,31 @@ dir_loop () {
 		if [ -d $i ]	# Checks if current object is directory, stores data then begins looping though it
 		then
 			echo -n "$(pwd)"/$i >> $1
-			echo " $(ls -ld $i | sed 's/2/Directory/') " >> $1
+			echo " $(ls -ld $i | sed 's/2/directory/') " >> $1
 			cd $i
 			dir_loop
 			cd ..
 		else
 		if [ -f $i ]	# Checks if current object is a file, stores all it's data and moves on
 		then
-			echo -n "$(pwd)"/$i  >> $1
-			TEST="$(ls -l $i | awk '{print}')"
-			case $TEST in
-			l*)
-				echo -n " $(ls -l $i | sed 's/1/Symbolic Link/') " >> $1
-				;;
-			*)
-				echo -n " $(ls -l $i | sed 's/1/File/') " >> $1
-				;;
-			esac
-			CHECKSUM="$(md5sum $i | awk '{print $1}')"
-			echo $CHECKSUM >> $1
+			if [ -z "$2" ]	# If there is no second argument supplied
+			then
+				if [ "$(pwd)"/$i != $1 ] # checks if current file name isn't same name as passed file name
+				then
+					echo -n "$(pwd)"/$i  >> $1
+					echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
+					CHECKSUM="$(md5sum $i | awk '{print $1}')"
+					echo $CHECKSUM >> $1
+				fi
+			else
+			if [ "$(pwd)"/$i != "$1" ] && [ "$(pwd)"/$i != "$2" ] # If two args presented, check to make sure file name isn't equal to either of them
+			then
+				echo -n "$(pwd)"/$i  >> $1
+				echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
+				CHECKSUM="$(md5sum $i | awk '{print $1}')"
+				echo $CHECKSUM >> $1
+			fi
+			fi
 		fi
 		fi
 	done
@@ -47,11 +51,11 @@ check_files_loop () {
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
 
-	cat $VER |
+	cat $3 |
 	{
 		while read veri		# Detects Deletions and Modifications
 		do
-			COUNT=$(grep -c "$veri" $CPTH)
+			COUNT=$(grep -c "$veri" $2)
 			if [ $COUNT = 0 ]
 			then
 				deleted=`expr $deleted + 1`
@@ -60,11 +64,11 @@ check_files_loop () {
 		done
 	}
 
-	cat $CPTH |
+	cat $2 |
 	{
 		while read check	# Detects Additions and Modifications
 		do
-			COUNT=$(grep -c "$check" $VER)
+			COUNT=$(grep -c "$check" $3)
 			if [ $COUNT = 0 ]
 			then
 				added=`expr $added + 1`
@@ -82,7 +86,13 @@ check_files_loop () {
 			COUNT=$(grep -c "$NAMES" $tmpfile)
 			if [ $COUNT = 1 ]
 			then
-				TYPE="$( echo $temp | awk '{print $12}')"
+				DIRCHECK="$( echo $temp | awk '{print $3}')"
+				if [ "$DIRCHECK" = "directory" ]
+				then
+					TYPE="$( echo $temp | awk '{print $11}')"
+				else
+					TYPE="$( echo $temp | awk '{print $12}')"
+				fi
 				if [ "$TYPE" = "-a" ]
 				then
 					ADD="$ADD $NAMES"
@@ -94,25 +104,45 @@ check_files_loop () {
 				fi
 			fi
 		done
-		#rm t.txt - #remove temp file - uncomment when needed
-
-		if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+		if [ -f $1 ]
 		then
-			echo "Files created: " $ADD >> $1
-			echo "Files deleted: " $DEL >> $1
-		else
-			# Outputs results to the console
-			echo "Files created: " $ADD
-			echo "Files deleted: " $DEL
+			rm $1
 		fi
+		touch $1
+		output "Objects created: " $1 "$ADD"
+		output "Objects deleted: " $1 "$DEL"
 	}
-	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
-	then
-		echo "Files modified: " $MODIFIED >> $1
-	else
-		echo "Files modified: " $MODIFIED
-	fi
+	output "Objects modified: " $1 "$MODIFIED"
+
+#   Old Output Functionaility
+#		if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+#		then
+#			echo "Files created: " $ADD >> $1
+#			echo "Files deleted: " $DEL >> $1
+#		else
+#			# Outputs results to the console
+#			echo "Files created: " $ADD
+#			echo "Files deleted: " $DEL
+#		fi
+#	}
+#	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
+#	then
+#		echo "Files modified: " $MODIFIED >> $1
+#	else
+#		echo "Files modified: " $MODIFIED
+#	fi
+
 	rm $tmpfile
+}
+
+output () {	# Takes (1)Header Text, (2)File output and (3)List of discrepencies detected
+	echo $1 >> $2
+	echo $1
+	for i in $3
+	do
+		echo $i >> $2
+		echo $i
+	done
 }
 
 case_func () {
@@ -130,13 +160,16 @@ case_func () {
 				    rm $1	# Removes existing file of the same name if it exists
 			    fi
     			touch $1	# Creates file with the name specified by the user
-    			VER="$VER$1"
+    			VER="$(pwd)/$1" # Stores location of verification file
+			echo $VER
     			dir_loop $VER	# Run the verification file creation script
-			echo $1
-			`openssl enc -aes-256-cbc -salt -in $i -out $i`
+			NEWVER="$(pwd)/$1.enc" # Stores location of encrypted verification file
+			`openssl enc -aes-256-cbc -salt -in "$VER" -out "$NEWVER"` # Encrypts verification file
+			rm $VER # Removes old verification file (plain text verison)
 			echo "Verification file encrypted"
+			return
     			;;
- 			-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
+ 		-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
 	    		# Write results to file given as the next argument.
 		    	shift
     			echo "Checking against verification file: $1"
@@ -146,21 +179,29 @@ case_func () {
     			fi
 	     		checkfile=$(mktemp)
 		    	CPTH="$checkfile"
-    			VER="$VER$1"
-	    		dir_loop $CPTH
-      		#check_files_loop
+    			VER="$(pwd)/$1"
+			ENCVER="$(pwd)/$1.enc"
+			`openssl enc -aes-256-cbc -d -in "$ENCVER" -out "$VER"`
+			rm $ENCVER
+	    		dir_loop $CPTH $VER
+      			#check_files_loop
     			#If output name exists
     			# Move to the output file name
     			if [ "$#" -gt 1 ]	# Checks if user has supplied an output file to save results to
     			then
 	    			shift
 	    			echo "Writing results to file: $1"
-	    			check_files_loop $1
+	    			check_files_loop $1 $CPTH $VER
 	    		else
 	     			check_files_loop
 	    		fi
+			# Re-encrypt verification file
+			echo "Please re-enter password to re-encrypt verification file: "
+			`openssl enc -aes-256-cbc -salt -in "$VER" -out "$ENCVER"
+			rm $VER # Remove plain text verification file`
+			return
 	    		;;
-			-dum)	# Creates dummy directories and files
+		-dum)	# Creates dummy directories and files
 		    	echo "Creating example directories and files to work with"
 	    		for i in 1 2 3
 	    		do
@@ -181,6 +222,7 @@ case_func () {
     			#	ln -s file1.txt slink1
     			#	ls -l file1.txt slink1	
     			#fi
+			return
     			;;
   		-?*)	# Potential room for argument catchall (out of scope)
 	    		echo "$i isn't valid"
@@ -198,6 +240,7 @@ case_func () {
 #
 #MAIN
 #
+
 if [ "$#" = 0 ]
 then
 	echo "Please choose from the following options:"
@@ -206,20 +249,42 @@ then
 	read -p "Enter 1 or 2: " ch #accepting user input to run program or exit
 	case $ch in
 		1)
-			#do stuff
-			echo "Do you want to list current files and folders?"
-			read -p "Enter y/n: " yorn
-			case $yorn in
-				y)
-					echo -n "Current list of file and folders in : "
-					echo "$PWD" | sed 's!.*/!!'
-					ls -l
-					case_func '-c' 'veri.txt' #call case function
-					;;
-				n)
-					exit 0
-					;;
-			esac
+			echo "Do you want files and folders to be created?"
+			read -p "Enter y or n: " yorn
+			if [ "$yorn" = "y" ]
+			then
+				case_func '-dum' #calls case_func and creates dummy files and folders
+			fi
+			echo "Do you want to list all current files and folders?"
+			read -p "Enter y or n: " yorn
+			if [ "$yorn" = "y" ]
+			then
+				echo -n "Current list of file and folders in : "
+				echo "$PWD" | sed 's!.*/!!'
+				ls -l
+			fi
+			echo "Do you want a verification file to be created?"
+			read -p "Enter y and verification file name or n: " yorn fname
+			if [ "$yorn" = "y" ]
+			then
+				case_func '-c' "$fname" #calls case_func to create a verification file and gives it a file name
+			fi
+			echo "Do you want this demo IDP to make changes to the files and folders?"
+			read -p "Enter y or n: " yorn
+			if [ "$yorn" = "y" ]
+			then
+				#create automated program that makes changes to files and folders in current directory (not veri/IDS)
+				echo "I got this far"
+			else
+			if [ "$yorn" = "n" ]
+			then
+				read -p "Please make changes manually. Enter y when you're done: " op
+				if [ "$op" = "y" ]
+				then
+					case_func '-o' "$fname" 'output.txt'
+				fi
+			fi
+			fi
 			;;
 		2)
 			#exit
@@ -230,3 +295,5 @@ then
 else
 	case_func "$@"
 fi
+
+

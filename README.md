@@ -22,6 +22,9 @@ In order to populate the verification file, a recursive function is used. In thi
 
 If it is a directory then the path to that directory is written to the file along with the details given by the 'ls -ld' command. As we also want to go through any sub directories, the change directory command is used to go into the directory found and this recursive function is called again to iterate over the everything found inside any sub directories. To get back out, the change directory command followed by '..' is run. If it is a file then the path to that file is written to the verification file along with the details associated given the same way as as if the object was a directory. 
 
+### To Do
+The verification file needs to be able to check itself as the last action it undertakes. Its data will be saved with the execption of the md5sum.
+
 ## Encrypt verification file
 ### What it does:
 ### How it works:
@@ -46,9 +49,9 @@ Once these variables are populated they then need to either be written to the co
 ### How it works:
 ## 7.~~Write output to a file~~
 ### What it does:
-If a user enters a name of a file to have the output written to, the results will be written to the file otherwise, the results will be printed to the console outlining the names of the files added, deleted and modified.
+Once a verification file has been created, the user has the ability to run the script again with the '-o' argument. The script will then check each of the files in the directory for any additions, deletions or modifications to the files within and then display them to the user. This is displayed through the terminal and optionally to an output file specifed by the user.
 ### How it works:
-Before entering the function which checks the current file system against the verification file, first there is a check to see if the user has entered the argument based on the number after '-o' has been entered. If the argument is greater than 1 then the user has specified an output file name and that will be passed to the function. Otherwise nothing will be passed to the function. Then once we've entered the check function, there is a check to see if the number of parameters is greater than 0. If so then write the outputs to the file specified. If not then print to console.
+Before entering the function which checks the current file system against the verification file, first there is a check to see if the user has entered the argument based on the number after '-o' has been entered. If the argument is greater than 1 then the user has specified an output file name and that will be passed to the function. Otherwise nothing will be passed to the function. Then once we've entered the check function, there is a check to see if the number of parameters is greater than 0. If so then write the outputs to the file specified. File provided or not, the results of the script will be displayed to the console displaying the additions, deletions and modifications made to the files.
 ## 4.~~Determine if directory, don't calculate checksums for directories~~
 ### What it does:
 If a directory is found, it is not possible to calculate a checksum for it therefore this step will need to be skipped.
@@ -57,6 +60,17 @@ This is done by using if statements to firstly check if an object found is a dir
 ## Put code in functions
 ### What it does:
 ### How it works:
+### dir_loop
+Loops through main directory and any subdirectories adding any objects found to the file provided for it's argument. It will not add any files that share the same name as the passed file name(s).
+### check_files_loop
+Loops through its provided files and compares the differences between them, duplicates names with different permissions size, md5 sum etc, are declared as modifications. Files missing from the verification file yet present in the validation file are declared as additions and the reverse is seen as deletions. These are then catagorized and displayed to the user and optionally saved into a requested file.
+### output
+Takes the data provided from check_files_loop, saves it to a file and displays it to the terminal.
+### case_func
+Interprets the entered arguments to determine which function to perform
+### main
+Handles user interaction should they not have entered any arguments or entered incorrect ones
+
 ## 5.~~Add ability to iterate through directories without creating duplicate verification files in each directory~~
 ### What it does:
 During verification file creation, we want to write the details of not only everything in the current or given directory but also any sub directories. The difficulty faced here is that once we start entering the sub directories, we still need to ensure we can write to the one verification file initally created.
@@ -76,3 +90,4 @@ In the function used to populate the verification file, looping through all the 
 
 ## NON-FUNCTIONAL REQUIREMENT: List files and directories in the order that they were changed (compare times) accessed
 ### Catch errors and display appropriate error mesage. Allow user to try again
+### Allow user to navigate through programs functionalities
