@@ -25,9 +25,14 @@ If it is a directory then the path to that directory is written to the file alon
 ### To Do
 The verification file needs to be able to check itself as the last action it undertakes. Its data will be saved with the execption of the md5sum.
 
-## Encrypt verification file
+## 10. ~~Encrypt verification file~~
 ### What it does:
+To provide additional security to the verification file, it is encrypted using a user provided password. This ensures only an the person who created the file can decrypt it and therefore run the diagnostics.
 ### How it works:
+After the verification file is created and populated, it is encrypted using OpenSSL. The encryption type is AES 256 CBC. The full command used is 'openssl enc -aes-256-cbc -salt -in "$VER" -out "$NEWVER"' with -salt used to add strength to encryption, and "$VER" holding the path to the verification file and "$NEWVER" holding the same path but appended with '.enc', this is because issues arise when using the same file for both input and output so the encrypted verification file needs to be written to a different file. After this command is executed, the original plaintext verification file is removed.
+
+The file is decrypted when the user requests to run a check against the verification file to the system. It is decrypted quite similar to how it was encrypted but with the encoded version as input and the original file name as output to then be passed to the function to perform the checks. Once the checks have been executed, the file is then re-encrypted and the text file is removed again.
+In each of these steps, the user is prompted for a password to set the encryption and is required to enter the same password on decryption.
 ## 3.~~Calculate check sums on all regular files~~
 ### What it does:
 In the recursive function (called when a user enters the argument to create a verification file). When the function finds a file, it calculates a MD5 checksum to be written to the verification file to later assist in checking if any changes have been made to the file.

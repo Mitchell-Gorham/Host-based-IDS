@@ -7,31 +7,31 @@
 
 dir_loop () {
 	# Recursively loops through each directory and file in the specified directory
-	for i in *
+	$(find *) | while read i
 	do
-		if [ -d $i ]	# Checks if current object is directory, stores data then begins looping though it
+		if [ -d "$i" ]	# Checks if current object is directory, stores data then begins looping though it
 		then
-			echo -n "$(pwd)"/$i >> $1
+			echo -n "$(pwd)/$i" >> $1
 			echo " $(ls -ld $i | sed 's/2/directory/') " >> $1
-			cd $i
+			cd "$i"
 			dir_loop
 			cd ..
 		else
-		if [ -f $i ]	# Checks if current object is a file, stores all it's data and moves on
+		if [ -f "$i" ]	# Checks if current object is a file, stores all it's data and moves on
 		then
 			if [ -z "$2" ]	# If there is no second argument supplied
 			then
-				if [ "$(pwd)"/$i != $1 ] # checks if current file name isn't same name as passed file name
+				if [ "$(pwd)/$i" != $1 ] # checks if current file name isn't same name as passed file name
 				then
-					echo -n "$(pwd)"/$i  >> $1
+					echo -n "$(pwd)/$i"  >> $1
 					echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
 					CHECKSUM="$(md5sum $i | awk '{print $1}')"
 					echo $CHECKSUM >> $1
 				fi
 			else
-			if [ "$(pwd)"/$i != "$1" ] && [ "$(pwd)"/$i != "$2" ] # If two args presented, check to make sure file name isn't equal to either of them
+			if [ "$(pwd)/$i" != "$1" ] && [ "$(pwd)/$i" != "$2" ] # If two args presented, check to make sure file name isn't equal to either of them
 			then
-				echo -n "$(pwd)"/$i  >> $1
+				echo -n "$(pwd)/$i"  >> $1
 				echo -n " $(ls -l $i | sed 's/1/file/') " >> $1
 				CHECKSUM="$(md5sum $i | awk '{print $1}')"
 				echo $CHECKSUM >> $1
@@ -153,7 +153,6 @@ case_func () {
 			    # Create verifcation with the file name given as next argument.
 			    shift
 			    echo "Creating verification file called $1"
-			    #shift
 			    # Check if user even entered an argument for -c
 			    # Check if entered argument ends in .txt, if it doesn't add it.
 			    if [ -f $1 ]	# Checks to see if file with same name exists
@@ -161,8 +160,13 @@ case_func () {
 				    rm $1	# Removes existing file of the same name if it exists
 			    fi
     			touch $1	# Creates file with the name specified by the user
-    			VER="$(pwd)/$1"
+    			VER="$(pwd)/$1" # Stores location of verification file
+			echo $VER
     			dir_loop $VER	# Run the verification file creation script
+			NEWVER="$(pwd)/$1.enc" # Stores location of encrypted verification file
+			`openssl enc -aes-256-cbc -salt -in "$VER" -out "$NEWVER"` # Encrypts verification file
+			rm $VER # Removes old verification file (plain text verison)
+			echo "Verification file encrypted"
 			return
     			;;
  		-o)	# Requires verification file and (Optionally)  output file name IN THIS ORDER
@@ -176,6 +180,9 @@ case_func () {
 	     		checkfile=$(mktemp)
 		    	CPTH="$checkfile"
     			VER="$(pwd)/$1"
+			ENCVER="$(pwd)/$1.enc"
+			`openssl enc -aes-256-cbc -d -in "$ENCVER" -out "$VER"`
+			rm $ENCVER
 	    		dir_loop $CPTH $VER
       			#check_files_loop
     			#If output name exists
@@ -188,6 +195,10 @@ case_func () {
 	    		else
 	     			check_files_loop
 	    		fi
+			# Re-encrypt verification file
+			echo "Please re-enter password to re-encrypt verification file: "
+			`openssl enc -aes-256-cbc -salt -in "$VER" -out "$ENCVER"
+			rm $VER # Remove plain text verification file`
 			return
 	    		;;
 		-dum)	# Creates dummy directories and files
