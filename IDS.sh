@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 #Full Path | Perms | Type | Owner | Group | Size | Last Modified Date | File Name | Checksum
 
 #Loop through command line arguments checking for -c and -o
@@ -13,8 +12,8 @@ dir_loop () {
 		then
 			echo -n "$(pwd)/$i" >> $1
 			echo " $(ls -ld $i | sed 's/2/directory/') " >> $1
-			cd "$i"
-			dir_loop
+			cd $i
+			dir_loop $1 $2
 			cd ..
 		else
 		if [ -f "$i" ]	# Checks if current object is a file, stores all it's data and moves on
@@ -51,11 +50,11 @@ check_files_loop () {
 	added=0 	#counter to show how many files have been added
 	deleted=0	#counter to show how many files have been deleted
 
-	cat $3 |
+	cat $2 |
 	{
 		while read veri		# Detects Deletions and Modifications
 		do
-			COUNT=$(grep -c "$veri" $2)
+			COUNT=$(grep -c "$veri" $1)
 			if [ $COUNT = 0 ]
 			then
 				deleted=`expr $deleted + 1`
@@ -64,11 +63,11 @@ check_files_loop () {
 		done
 	}
 
-	cat $2 |
+	cat $1 |
 	{
 		while read check	# Detects Additions and Modifications
 		do
-			COUNT=$(grep -c "$check" $3)
+			COUNT=$(grep -c "$check" $2)
 			if [ $COUNT = 0 ]
 			then
 				added=`expr $added + 1`
@@ -104,43 +103,47 @@ check_files_loop () {
 				fi
 			fi
 		done
-		if [ -f $1 ]
+		if [ -n "$3" ]
 		then
-			rm $1
+			if [ -f $3 ]
+			then
+				rm $3
+			fi
+			touch $3
 		fi
-		touch $1
-		output "Objects created: " $1 "$ADD"
-		output "Objects deleted: " $1 "$DEL"
+		if [ -z "$ADD" ]
+		then
+			ADD="None"
+		fi
+		if [ -z "$DEL" ]
+		then
+			DEL="None"
+		fi 
+		output "Objects created: " "$ADD" "$3"
+		output "Objects deleted: " "$DEL" "$3"
 	}
-	output "Objects modified: " $1 "$MODIFIED"
-
-#   Old Output Functionaility
-#		if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
-#		then
-#			echo "Files created: " $ADD >> $1
-#			echo "Files deleted: " $DEL >> $1
-#		else
-#			# Outputs results to the console
-#			echo "Files created: " $ADD
-#			echo "Files deleted: " $DEL
-#		fi
-#	}
-#	if [ "$#" -gt 0 ]	# Checks if user has supplied an output file to save results to
-#	then
-#		echo "Files modified: " $MODIFIED >> $1
-#	else
-#		echo "Files modified: " $MODIFIED
-#	fi
-
+	if [ -z "$MODIFIED" ]
+	then
+		MODIFIED="None"
+	fi
+	output "Objects modified: " "$MODIFIED" "$3"
 	rm $tmpfile
 }
 
-output () {	# Takes (1)Header Text, (2)File output and (3)List of discrepencies detected
-	echo $1 >> $2
+output () {	# Takes (1)Header Text, (2)List of discrep and opt(3)Output name
+	# Saves to $3 (Output name) if it exists
+	if [ -n "$3" ]
+	then
+		echo $1 >> $3
+		for i in $2
+		do
+			echo $i >> $3
+		done
+	fi
+	# Display to console
 	echo $1
-	for i in $3
+	for i in $2
 	do
-		echo $i >> $2
 		echo $i
 	done
 }
@@ -184,6 +187,7 @@ case_func () {
 			`openssl enc -aes-256-cbc -d -in "$ENCVER" -out "$VER"`
 			rm $ENCVER
 	    		dir_loop $CPTH $VER
+
       			#check_files_loop
     			#If output name exists
     			# Move to the output file name
@@ -191,9 +195,10 @@ case_func () {
     			then
 	    			shift
 	    			echo "Writing results to file: $1"
-	    			check_files_loop $1 $CPTH $VER
+	    			check_files_loop $CPTH $VER $1
 	    		else
-	     			check_files_loop
+	    			echo "Writing results to terminal"
+	     			check_files_loop $CPTH $VER
 	    		fi
 			# Re-encrypt verification file
 			echo "Please re-enter password to re-encrypt verification file: "
